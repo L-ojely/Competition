@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f0f1a">
+  <meta name="description" content="梗百科 - AI一键解释网络热梗、专业术语、新兴词汇，不懂任何词就来这">
+  <title>梗百科 - AI热词解码器</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg">
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Loading Overlay (hidden by default) -->
+  <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">AI正在解码中...</div>
+    <div class="loading-sub">查阅资料、分析语义、生成解释</div>
+  </div>
+
+  <!-- Install Prompt -->
+  <div id="installPrompt" class="install-prompt hidden">
+    <p>将梗百科安装到桌面，随时随地查热词</p>
+    <button id="installBtn" class="install-btn">安装</button>
+    <button id="installClose" class="install-close">✕</button>
+  </div>
+
+  <!-- API Settings Modal -->
+  <div id="apiModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">API 设置</span>
+        <button class="modal-close" onclick="App.closeApiSettings()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="api-provider-info">
+          <span class="api-provider-label">模型提供商</span>
+          <select id="apiProvider" class="api-select">
+            <option value="deepseek">DeepSeek（推荐 · 性价比最高）</option>
+            <option value="openai">OpenAI</option>
+            <option value="custom">自定义兼容接口</option>
+          </select>
+        </div>
+        <div class="api-key-group">
+          <label class="api-key-label" for="apiKeyInput">API Key</label>
+          <div class="api-key-input-wrap">
+            <input type="password" class="search-box" id="apiKeyInput"
+                   placeholder="sk-xxxxxxxxxxxxxxxx"
+                   autocomplete="off">
+            <button class="api-key-toggle" id="apiKeyToggle" onclick="App.toggleApiKeyVisibility()" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div id="customFields" style="display:none;">
+          <div class="api-key-group">
+            <label class="api-key-label" for="apiBaseUrl">API Base URL</label>
+            <input type="text" class="search-box" id="apiBaseUrl"
+                   placeholder="https://api.deepseek.com" autocomplete="off">
+          </div>
+          <div class="api-key-group">
+            <label class="api-key-label" for="apiModel">模型名称</label>
+            <input type="text" class="search-box" id="apiModel"
+                   placeholder="deepseek-chat" autocomplete="off">
+          </div>
+        </div>
+        <div class="api-status-bar" id="apiStatusBar">
+          <span class="api-status-text">状态：未配置</span>
+        </div>
+        <div class="api-actions">
+          <button class="action-btn api-save-btn" onclick="App.saveApiKey()">保存并连接</button>
+          <button class="action-btn api-clear-btn" onclick="App.clearApiKey()">清除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Container -->
+  <div class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo">
+        <div class="logo-icon">梗</div>
+        <span class="logo-text">梗百科</span>
+      </div>
+      <div class="header-actions">
+        <button id="apiStatusBtn" class="icon-btn api-status-btn" title="API 设置" onclick="App.openApiSettings()">
+          <span id="apiStatusDot" class="api-dot offline"></span>
+          <span class="api-btn-label">API</span>
+        </button>
+        <div id="themeToggleBtn" class="theme-toggle" title="切换主题">
+          <div class="theme-toggle-inner">🌙 ☀️</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========== HOME PAGE ========== -->
+    <div id="page-home" class="page active">
+
+      <!-- Search -->
+      <div class="search-section">
+        <div class="search-box-wrapper">
+          <input type="text" class="search-box" id="searchInput"
+                 placeholder="输入任何不懂的词、梗、术语..."
+                 autocomplete="off" autofocus>
+          <div class="search-actions">
+            <button class="voice-btn" id="voiceBtn" title="语音输入">
+              <span class="voice-icon">🎤</span>
+            </button>
+            <button class="search-btn" id="searchBtn" title="搜索">
+              <span>🔍</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hot Tags -->
+      <div class="section-title">热门搜索</div>
+      <div class="hot-tags" id="hotTags"></div>
+
+      <!-- Search History -->
+      <div class="history-section">
+        <div class="history-header">
+          <span class="section-title">搜索历史</span>
+          <button class="clear-btn" onclick="App.clearHistory()">清空</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- ========== RESULT PAGE ========== -->
+    <div id="page-result" class="page">
+      <div class="result-back" id="resultBackBtn">
+        <span>←</span> 返回首页
+      </div>
+
+      <div class="result-search">
+        <div class="search-box-wrapper">
+          <input type="text" class="search-box" id="resultSearchInput"
+                 placeholder="继续搜索..." autocomplete="off">
+          <div class="search-actions">
+            <button class="search-btn" id="resultSearchBtn">
+              <span>🔍</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="resultContent"></div>
+    </div>
+
+    <!-- ========== HOT RANK PAGE ========== -->
+    <div id="page-hot" class="page">
+      <div class="section-title" style="font-size:1rem;margin-bottom:16px;">热词排行榜 TOP 15</div>
+      <div id="kbStats"></div>
+      <div class="hot-rank-list" id="hotRankList"></div>
+    </div>
+
+    <!-- ========== FAVORITES PAGE ========== -->
+    <div id="page-fav" class="page">
+      <div class="section-title" style="font-size:1rem;margin-bottom:16px;">我的收藏</div>
+      <div class="fav-list" id="favList"></div>
+      <div class="fav-empty" id="favEmpty" style="display:none;">
+        <div class="fav-empty-icon">📭</div>
+        <div class="fav-empty-text">还没有收藏任何内容<br>去搜索并收藏感兴趣的热词吧</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span>首页</span>
+    </button>
+    <button class="nav-item" data-page="hot">
+      <span class="nav-icon">🔥</span>
+      <span>热词榜</span>
+    </button>
+    <button class="nav-item" data-page="fav">
+      <span class="nav-icon">⭐</span>
+      <span>收藏</span>
+    </button>
+  </nav>
+
+  <!-- Scripts -->
+  <script src="/js/storage.js"></script>
+  <script src="/js/ai.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
